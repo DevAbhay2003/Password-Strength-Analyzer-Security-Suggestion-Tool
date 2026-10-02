@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberGuard | Password Strength Analyzer & Security Suggestion Tool</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Chart.js CDN for Defensive Analytics Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="brand">
+                <span class="shield-icon">🛡️</span>
+                <span class="brand-title">CyberGuard</span>
+                <span class="badge-env">DEFENSIVE SEC-LAB</span>
+            </div>
+            <nav class="nav-links">
+                <a href="#analyzer-section" class="active">Analyzer</a>
+                <a href="#policy-section">Policy Checker</a>
+                <a href="#generator-section">Generator</a>
+                <a href="#hashing-section">Hashing Lab</a>
+                <a href="#dashboard-section">Analytics</a>
+                <a href="#awareness-section">Security Rules</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="main-container">
+
+        <!-- Hero & Privacy Banner -->
+        <section class="hero-banner">
+            <div class="hero-content">
+                <h1>Password Strength Analyzer & Security Suggestion Tool</h1>
+                <p class="subtitle">
+                    Local, privacy-preserving credential resilience engine powered by pattern analysis,
+                    entropy estimation, dictionary checks, and NIST-aligned defense guidelines.
+                </p>
+            </div>
+            <div class="privacy-callout">
+                <div class="callout-icon">🔒</div>
+                <div class="callout-text">
+                    <strong>Zero-Knowledge Defensive Architecture:</strong>
+                    Passwords are analyzed strictly in-memory. Your input is <em>never stored</em>,
+                    <em>never logged</em>, and <em>never transmitted</em> to external third-party services.
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 1: REAL-TIME ANALYZER -->
+        <section id="analyzer-section" class="card analyzer-card">
+            <div class="card-header">
+                <h2>Real-Time Password Analysis Engine</h2>
+                <span class="info-pill">Local In-Memory Evaluation</span>
+            </div>
+
+            <!-- Password Input Field -->
+            <div class="input-group">
+                <label for="password-input">Enter Password to Evaluate (Synthetic/Demo Recommended):</label>
+                <div class="input-wrapper">
+                    <input 
+                        type="password" 
+                        id="password-input" 
+                        placeholder="Type a password to test (e.g. Password123!, Summer2026!, etc.)..." 
+                        autocomplete="off"
+                        spellcheck="false"
+                    >
+                    <button type="button" id="toggle-password-btn" class="icon-btn" title="Show / Hide Password">
+                        <span id="eye-icon">👁️</span>
+                    </button>
+                    <button type="button" id="clear-btn" class="icon-btn" title="Clear input">✕</button>
+                </div>
+                <div class="input-footer">
+                    <span id="char-counter">0 characters</span>
+                    <button type="button" id="toggle-context-btn" class="link-btn">
+                        + Optional Personal Context Check
+                    </button>
+                </div>
+            </div>
+
+            <!-- Optional Voluntary Personal Context Drawer -->
+            <div id="context-drawer" class="context-drawer hidden">
+                <div class="drawer-header">
+                    <h4>Voluntary Personal Context Check (OSINT/Targeted Attack Simulation)</h4>
+                    <span class="warning-tag">Local Only • Not Saved</span>
+                </div>
+                <p class="drawer-desc">
+                    Attackers routinely leverage publicly accessible information (names, birth years, affiliations)
+                    in custom dictionary rules. Test if your password inadvertently leaks these components.
+                </p>
+                <div class="context-grid">
+                    <div class="ctx-field">
+                        <label for="ctx-name">First Name:</label>
+                        <input type="text" id="ctx-name" placeholder="e.g. Rahul, Sarah">
+                    </div>
+                    <div class="ctx-field">
+                        <label for="ctx-year">Birth / Graduation Year:</label>
+                        <input type="text" id="ctx-year" placeholder="e.g. 2002">
+                    </div>
+                    <div class="ctx-field">
+                        <label for="ctx-org">Company / College Name:</label>
+                        <input type="text" id="ctx-org" placeholder="e.g. Acme, Stanford">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strength Meter & Score Panel -->
+            <div class="meter-container">
+                <div class="meter-header">
+                    <div class="tier-indicator">
+                        <span class="tier-label">STRENGTH TIER:</span>
+                        <span id="classification-badge" class="badge badge-neutral">PENDING INPUT</span>
+                    </div>
+                    <div class="score-display">
+                        <span class="score-label">DEFENSE SCORE:</span>
+                        <span id="score-text" class="score-value">0</span><span class="score-max">/100</span>
+                    </div>
+                </div>
+
+                <!-- Animated Progress Bar -->
+                <div class="progress-track">
+                    <div id="progress-bar" class="progress-bar" style="width: 0%;"></div>
+                </div>
+                <p id="classification-desc" class="tier-description">Enter a password above to begin defensive evaluation.</p>
+            </div>
+
+            <!-- Analysis Metrics Grid -->
+            <div class="metrics-grid">
+                <!-- Card A: Length & Diversity -->
+                <div class="metric-card">
+                    <h4>Composition & Character Pool</h4>
+                    <div class="metric-row">
+                        <span>Length:</span>
+                        <strong id="metric-length">0 chars (<span id="metric-band">Empty</span>)</strong>
+                    </div>
+                    <div class="metric-row">
+                        <span>Unique Chars:</span>
+                        <strong id="metric-unique">0 (Ratio: 0.0)</strong>
+                    </div>
+                    <div class="metric-row">
+                        <span>Character Classes:</span>
+                        <strong id="metric-types">0 of 4 types</strong>
+                    </div>
+                    <div class="class-tags" id="class-tags">
+                        <span class="tag tag-inactive" id="tag-lower">a-z</span>
+                        <span class="tag tag-inactive" id="tag-upper">A-Z</span>
+                        <span class="tag tag-inactive" id="tag-digits">0-9</span>
+                        <span class="tag tag-inactive" id="tag-symbols">!@#$</span>
+                    </div>
+                </div>
+
+                <!-- Card B: Entropy Estimation -->
+                <div class="metric-card">
+                    <h4>Entropy & Keyspace Estimation</h4>
+                    <div class="metric-row">
+                        <span>Theoretical Entropy:</span>
+                        <strong id="metric-theo-entropy">0.0 bits</strong>
+                    </div>
+                    <div class="metric-row">
+                        <span>Realistic Effective Entropy:</span>
+                        <strong id="metric-eff-entropy">0.0 bits</strong>
+                    </div>
+                    <div class="metric-row">
+                        <span>Theoretical Keyspace:</span>
+                        <strong id="metric-keyspace">0 combinations</strong>
+                    </div>
+                    <div class="metric-row">
+                        <span>Offline Guess Resistance:</span>
+                        <strong id="metric-resistance" class="text-muted">Uncertain</strong>
+                    </div>
+                    <p class="micro-note">
+                        *Theoretical entropy assumes uniform random selection. Effective entropy discounts human patterns.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Findings & Weakness Detection List -->
+            <div class="results-section">
+                <h3>Vulnerability & Pattern Findings</h3>
+                <div id="findings-container" class="findings-container">
+                    <div class="empty-state">No vulnerabilities detected yet. Enter input above.</div>
+                </div>
+            </div>
+
+            <!-- Tailored Defensive Recommendations -->
+            <div class="results-section">
+                <h3>Actionable Security Recommendations</h3>
+                <ul id="suggestions-list" class="suggestions-list">
+                    <li class="suggestion-item info-item">
+                        Security recommendations will adapt dynamically as you test passwords.
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 2: PASSWORD POLICY CHECKER -->
+        <section id="policy-section" class="card">
+            <div class="card-header">
+                <h2>Modern Password Policy Evaluation (NIST SP 800-63B)</h2>
+                <span id="policy-status-badge" class="badge badge-neutral">PENDING</span>
+            </div>
+            <p class="card-desc">
+                Evaluate organizational compliance. Learn why formal policy compliance is different from
+                mathematical unpredictability: a password can pass legacy composition rules and still remain predictable.
+            </p>
+            <div class="policy-controls-grid">
+                <div class="policy-option">
+                    <label>
+                        <input type="checkbox" id="policy-chk-common" checked>
+                        Screen against known compromised passwords
+                    </label>
+                </div>
+                <div class="policy-option">
+                    <label>
+                        <input type="checkbox" id="policy-chk-personal" checked>
+                        Reject personal context identifiers
+                    </label>
+                </div>
+                <div class="policy-option">
+                    <label for="policy-min-length">Minimum Length:</label>
+                    <select id="policy-min-length">
+                        <option value="8">8 characters (Legacy)</option>
+                        <option value="12" selected>12 characters (Recommended)</option>
+                        <option value="16">16 characters (High Security)</option>
+                    </select>
+                </div>
+            </div>
+            <div id="policy-violations" class="policy-violations-box">
+                <em>Policy results will synchronize with the active password entered above.</em>
+            </div>
+        </section>
+
+        <!-- SECTION 3: SECURE CREDENTIAL & PASSPHRASE GENERATOR -->
+        <section id="generator-section" class="card">
+            <div class="card-header">
+                <h2>Cryptographically Secure Password & Passphrase Generator</h2>
+                <span class="info-pill">CSPRNG (Python secrets)</span>
+            </div>
+            <p class="card-desc">
+                Generate high-entropy, mathematically unpredictable credentials using Python's operating system
+                entropy source (<code>secrets</code>). Never uses predictable pseudo-random algorithms.
+            </p>
+            <div class="generator-tabs">
+                <button type="button" class="tab-btn active" id="tab-gen-pwd">Random Password</button>
+                <button type="button" class="tab-btn" id="tab-gen-passphrase">Diceware-Style Passphrase</button>
+            </div>
+
+            <!-- Password Generation Controls -->
+            <div id="gen-pwd-controls" class="gen-controls">
+                <div class="control-row">
+                    <label for="gen-length">Length: <span id="gen-length-val">20</span> characters</label>
+                    <input type="range" id="gen-length" min="12" max="32" value="20">
+                </div>
+                <div class="checkbox-row">
+                    <label><input type="checkbox" id="gen-upper" checked> Uppercase (A-Z)</label>
+                    <label><input type="checkbox" id="gen-lower" checked> Lowercase (a-z)</label>
+                    <label><input type="checkbox" id="gen-digits" checked> Digits (0-9)</label>
+                    <label><input type="checkbox" id="gen-symbols" checked> Symbols (!@#$)</label>
+                </div>
+            </div>
+
+            <!-- Passphrase Generation Controls -->
+            <div id="gen-passphrase-controls" class="gen-controls hidden">
+                <div class="control-row">
+                    <label for="gen-words">Word Count: <span id="gen-words-val">4</span> words</label>
+                    <input type="range" id="gen-words" min="3" max="6" value="4">
+                </div>
+                <div class="control-row">
+                    <label for="gen-separator">Separator:</label>
+                    <select id="gen-separator">
+                        <option value="-">Hyphen (-)</option>
+                        <option value=".">Period (.)</option>
+                        <option value="_">Underscore (_)</option>
+                        <option value=" ">Space ( )</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="generator-actions">
+                <button type="button" id="generate-btn" class="btn btn-primary">⚡ Generate Secure Credential</button>
+            </div>
+
+            <!-- Generation Output Box -->
+            <div class="generator-output-box">
+                <div class="output-field">
+                    <input type="text" id="gen-output-display" readonly placeholder="Click 'Generate Secure Credential' above...">
+                    <button type="button" id="copy-gen-btn" class="btn btn-secondary">Copy</button>
+                    <button type="button" id="test-gen-btn" class="btn btn-accent">Analyze in Engine ➔</button>
+                </div>
+                <p id="gen-meta-note" class="micro-note">Generated outputs are synthetic demonstrations and are never saved to disk.</p>
+            </div>
+        </section>
+
+        <!-- SECTION 4: EDUCATIONAL HASHING BENCHMARK -->
+        <section id="hashing-section" class="card">
+            <div class="card-header">
+                <h2>Password Hashing Lab & Benchmark</h2>
+                <span class="info-pill">Authentication Cryptography</span>
+            </div>
+            <p class="card-desc">
+                Understand why general-purpose fast hashes (MD5, SHA-256) are dangerous for password storage,
+                while modern slow memory-hard key derivation functions (PBKDF2, scrypt, Argon2id) protect accounts.
+            </p>
+            <div class="hashing-controls">
+                <button type="button" id="run-hash-benchmark-btn" class="btn btn-secondary">
+                    ▶ Run Real-Time Cryptographic Hash Benchmark
+                </button>
+            </div>
+            <div id="hashing-results-container" class="hashing-results-container">
+                <div class="empty-state">Click above to benchmark execution timings and compare GPU resistance.</div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: PRIVACY-SAFE ANALYTICS DASHBOARD -->
+        <section id="dashboard-section" class="card">
+            <div class="card-header">
+                <h2>Defensive Telemetry & Analytics Dashboard</h2>
+                <span class="badge badge-success">Zero Password Persistence</span>
+            </div>
+            <p class="card-desc">
+                High-level aggregate statistics compiled strictly from non-reversible numeric metadata
+                (scores, classifications, lengths). No passwords or hashes exist in the analytics database.
+            </p>
+
+            <div class="stat-cards-grid">
+                <div class="stat-card">
+                    <span class="stat-title">Total Analyses Evaluated</span>
+                    <span id="stat-total" class="stat-number">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-title">Average Defense Score</span>
+                    <span id="stat-avg-score" class="stat-number">0 / 100</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-title">Average Character Length</span>
+                    <span id="stat-avg-len" class="stat-number">0 chars</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-title">Dominant Classification</span>
+                    <span id="stat-dominant" class="stat-number">-</span>
+                </div>
+            </div>
+
+            <!-- Charts Container -->
+            <div class="charts-grid">
+                <div class="chart-wrapper">
+                    <h4>Strength Tier Distribution</h4>
+                    <canvas id="chart-classifications"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <h4>Score Distribution Histogram</h4>
+                    <canvas id="chart-scores"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <h4>Password Length Distribution</h4>
+                    <canvas id="chart-lengths"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <h4>Top Detected Vulnerability Types</h4>
+                    <canvas id="chart-weaknesses"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 6: SECURITY AWARENESS & BEST PRACTICES -->
+        <section id="awareness-section" class="card">
+            <div class="card-header">
+                <h2>10 Essential Password Security Rules</h2>
+                <span class="info-pill">Industry Best Practices</span>
+            </div>
+            <div class="rules-grid">
+                <div class="rule-card">
+                    <div class="rule-num">01</div>
+                    <h4>Never Reuse Passwords</h4>
+                    <p>Every online service must have a distinct credential. Credential stuffing turns one third-party compromise into account takeover across all your accounts.</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-num">02</div>
+                    <h4>Prioritize Length Over Complexity</h4>
+                    <p>A 16–20 character passphrase composed of random words yields vastly higher keyspaces than a short 8-character string with awkward symbol substitutions.</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-num">03</div>
+                    <h4>Avoid Personal Identifiers</h4>
+                    <p>Names, birth years, pet names, and hometowns are easily harvestable via Open-Source Intelligence (OSINT) and prioritized by custom attack rule engines.</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-num">04</div>
+                    <h4>Eliminate Keyboard Patterns</h4>
+                    <p>Walks like "qwerty", "asdfgh", and "1qaz" are cataloged in automated attacker dictionaries and broken instantly regardless of added punctuation.</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-num">05</div>
+                    <h4>Deploy a Password Manager</h4>
+                    <p>Let an audited password manager generate, encrypt, and autofill 20+ character random credentials so you only ever have to memorize one master passphrase.</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-num">06</div>
+                    <h4>Always Enable MFA / 2FA</h4>
+                    <p>Multi-Factor Authentication (authenticator apps, hardware FIDO2 keys) provides defense-in-depth, neutralizing attacks even if a password is exposed.</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-num">07</div>
+                    <h4>Never Share Credentials</h4>
+                    <p>Avoid sending credentials over email, chat, or spreadsheets. Legitimate IT staff, administrators, and service desks will never request your password.</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-num">08</div>
+                    <h4>Beware Phishing Simulations & Clones</h4>
+                    <p>Always inspect the browser address bar (domain name and TLS certificate) before entering credentials. A strong password cannot defend against being typed into an adversary's phishing portal.</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-num">09</div>
+                    <h4>Change Compromised Credentials Rapidly</h4>
+                    <p>If a service notifies you of a breach or you suspect exposure, immediately rotate the password and revoke active session tokens.</p>
+                </div>
+                <div class="rule-card">
+                    <div class="rule-num">10</div>
+                    <h4>Embrace Passkeys & WebAuthn</h4>
+                    <p>Where available, migrate toward cryptographic passkeys (FIDO2) which are cryptographically bound to specific domains and immune to credential phishing.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <p><strong>CyberGuard Password Strength Analyzer</strong> | Cybersecurity Course Project</p>
+            <p class="footer-disclaimer">
+                Educational Defensive Tool. Passwords are processed strictly in-memory without persistence.
+                Designed in accordance with NIST SP 800-63B and OWASP Application Security guidelines.
+            </p>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
