@@ -417,5 +417,6 @@ Refer to the [screenshots/](screenshots/README.md) directory for captured eviden
 
 ## Author
 
-**Cybersecurity Engineering Capstone Project**  
+**Cybersecurity Engineering Capstone Project**
+**Abhishek Basu — Embedded Systems Student GitHub: [DevAbhay2003](https://github.com/DevAbhay2003?tab=repositories) · LinkedIn: [Abhishek Basu](https://www.linkedin.com/in/abhishek-basu-68b1b1342/)**
 *Built for Coursework, Placement Interviews, and Portfolio Showcase.*
