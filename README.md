@@ -2,7 +2,7 @@
 
 [![Defensive Cybersecurity](https://img.shields.io/badge/Security-Defensive%20Engineering-blue?style=for-the-badge&logo=shield)](https://github.com/)
 [![Zero-Persistence](https://img.shields.io/badge/Privacy-Zero--Knowledge%20In--Memory-emerald?style=for-the-badge&logo=lock)](https://github.com/)
-[![Tests](https://img.shields.io/badge/Tests-35%2F35%20Passed-brightgreen?style=for-the-badge&logo=pytest)](https://github.com/)
+[![Tests](https://img.shields.io/badge/Tests-36%2F36%20Passed-brightgreen?style=for-the-badge&logo=pytest)](https://github.com/)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
@@ -146,7 +146,7 @@ SQLite Telemetry Database (analyses & findings tables)
 | **Frontend** | HTML5 / CSS3 / Vanilla JS | Zero external framework dependencies; high performance and transparency |
 | **Telemetry DB** | SQLite | Serverless, relational database storing exclusively non-reversible numeric metadata |
 | **Visualizations** | Chart.js | Dynamic, client-side rendering of distribution and weakness frequency charts |
-| **Testing** | `unittest` & `pytest` | 35 automated unit and security tests ensuring engine and privacy integrity |
+| **Testing** | `unittest` & `pytest` | 36 automated unit and security tests ensuring engine and privacy integrity |
 
 ---
 

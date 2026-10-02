@@ -85,12 +85,36 @@ document.addEventListener("DOMContentLoaded", () => {
     const statAvgScore = document.getElementById("stat-avg-score");
     const statAvgLen = document.getElementById("stat-avg-len");
     const statDominant = document.getElementById("stat-dominant");
+    const statPostureBadge = document.getElementById("stat-posture-badge");
+    const statPostureScore = document.getElementById("stat-posture-score");
+    const statPostureBar = document.getElementById("stat-posture-bar");
+    const statScoreTier = document.getElementById("stat-score-tier");
+    const statAtRisk = document.getElementById("stat-at-risk");
+    const statAtRiskCount = document.getElementById("stat-at-risk-count");
+    const statNistRate = document.getElementById("stat-nist-rate");
+    const statNistCount = document.getElementById("stat-nist-count");
+    const dashboardLastSync = document.getElementById("dashboard-last-sync");
+    const dashboardSessionCounter = document.getElementById("dashboard-session-counter");
+    const telemetryInsightsContainer = document.getElementById("telemetry-insights-container");
+    const telemetryTableBody = document.getElementById("telemetry-table-body");
+    const telemetrySearchInput = document.getElementById("telemetry-search-input");
+    const telemetryFilterTier = document.getElementById("telemetry-filter-tier");
+    const btnRefreshDashboard = document.getElementById("btn-refresh-dashboard");
+    const btnSimulateIngestion = document.getElementById("btn-simulate-ingestion");
+    const btnExportTelemetry = document.getElementById("btn-export-telemetry");
+    const btnResetTelemetry = document.getElementById("btn-reset-telemetry");
+    const simChips = document.querySelectorAll(".sim-chip");
 
     // Global Chart Instances
     let chartClassifications = null;
     let chartScores = null;
     let chartLengths = null;
     let chartWeaknesses = null;
+    let chartSeverities = null;
+    let chartUniqueness = null;
+
+    // Local cached telemetry events for table filtering
+    let currentTelemetryEvents = [];
 
     // Debounce timer for smooth typing experience
     let debounceTimer = null;
@@ -450,9 +474,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     /* ========================================================
-       10. DASHBOARD CHARTS & TELEMETRY
+       10. DASHBOARD CHARTS & TELEMETRY SUITE
        ======================================================== */
-    async function loadDashboardStats() {
+    function escapeHTML(str) {
+        if (!str) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    async function loadDashboardStats(isManualRefresh = false) {
+        const refreshIcon = btnRefreshDashboard ? btnRefreshDashboard.querySelector(".btn-icon") : null;
+        if (isManualRefresh && refreshIcon) {
+            refreshIcon.style.transition = "transform 0.5s ease";
+            refreshIcon.style.transform = "rotate(360deg)";
+            setTimeout(() => {
+                refreshIcon.style.transform = "rotate(0deg)";
+            }, 600);
+        }
+
         try {
             const response = await fetch("/api/dashboard/stats");
             if (!response.ok) return;
@@ -466,11 +509,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderDashboard(stats) {
+        // 1. Executive Stat Cards
         statTotal.textContent = stats.total_analyses;
         statAvgScore.textContent = `${stats.average_score} / 100`;
         statAvgLen.textContent = `${stats.average_length} chars`;
 
-        // Determine dominant tier
+        // Dominant classification
         let maxCount = -1;
         let dominantTier = "N/A";
         for (const [tier, count] of Object.entries(stats.classifications)) {
@@ -481,15 +525,76 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         statDominant.textContent = dominantTier;
 
-        // Render Charts using Chart.js
+        if (statScoreTier) {
+            statScoreTier.textContent = stats.average_score >= 75
+                ? "Grade: Enterprise Resilience"
+                : (stats.average_score >= 50 ? "Grade: Moderate Resistance" : "Grade: High Vulnerability Rate");
+        }
+
+        if (statAtRisk) statAtRisk.textContent = `${stats.at_risk_percentage || 0}%`;
+        if (statAtRiskCount) statAtRiskCount.textContent = `${stats.at_risk_count || 0} in VERY WEAK / WEAK`;
+
+        if (statNistRate) statNistRate.textContent = `${stats.nist_compliance_rate || 0}%`;
+        if (statNistCount) statNistCount.textContent = `${stats.nist_compliant_count || 0} zero-weakness compliant`;
+
+        // 2. Posture Rating Banner
+        if (statPostureBadge && statPostureScore && statPostureBar) {
+            const pScore = stats.risk_posture_score || 0;
+            statPostureScore.textContent = pScore;
+            statPostureBar.style.width = `${pScore}%`;
+
+            let postureBadgeClass = "badge badge-neutral";
+            let postureColor = "#3b82f6";
+
+            if (pScore >= 75) {
+                postureBadgeClass = "badge badge-success";
+                postureColor = "#10b981";
+            } else if (pScore >= 55) {
+                postureBadgeClass = "badge badge-info";
+                postureColor = "#06b6d4";
+            } else if (pScore >= 40) {
+                postureBadgeClass = "badge badge-warning";
+                postureColor = "#eab308";
+            } else {
+                postureBadgeClass = "badge badge-danger";
+                postureColor = "#ef4444";
+            }
+
+            statPostureBadge.className = postureBadgeClass;
+            statPostureBadge.textContent = stats.risk_posture || "ASSESSING";
+            statPostureBar.style.backgroundColor = postureColor;
+        }
+
+        if (dashboardSessionCounter) {
+            dashboardSessionCounter.textContent = `${stats.total_analyses} Sessions Logged`;
+        }
+
+        if (dashboardLastSync) {
+            const now = new Date();
+            dashboardLastSync.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        // 3. Render 6 Charts
         renderClassificationChart(stats.classifications);
         renderScoreChart(stats.score_distribution);
         renderLengthChart(stats.length_distribution);
-        renderWeaknessChart(stats.common_weaknesses);
+        renderWeaknessChart(stats.common_weaknesses || []);
+        renderSeverityChart(stats.severity_distribution || {});
+        renderUniquenessChart(stats.uniqueness_distribution || {});
+
+        // 4. Render Dynamic Automated Security Insights
+        renderSecurityInsights(stats.security_insights || []);
+
+        // 5. Render Recent Telemetry Activity Feed
+        currentTelemetryEvents = stats.recent_telemetry || [];
+        renderTelemetryTable(currentTelemetryEvents);
     }
 
+    /* --- CHART 1: Classification Doughnut --- */
     function renderClassificationChart(dataObj) {
-        const ctx = document.getElementById("chart-classifications").getContext("2d");
+        const canvas = document.getElementById("chart-classifications");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
         const labels = Object.keys(dataObj);
         const values = Object.values(dataObj);
 
@@ -504,21 +609,36 @@ document.addEventListener("DOMContentLoaded", () => {
                         "#ef4444", "#f97316", "#eab308", "#06b6d4", "#10b981"
                     ],
                     borderColor: "#111827",
-                    borderWidth: 2
+                    borderWidth: 2,
+                    hoverOffset: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: "bottom", labels: { color: "#9ca3af", font: { size: 11 } } }
-                }
+                    legend: {
+                        position: "bottom",
+                        labels: { color: "#9ca3af", font: { size: 10, weight: "bold" }, boxWidth: 12, padding: 10 }
+                    },
+                    tooltip: {
+                        backgroundColor: "#111827",
+                        borderColor: "#374151",
+                        borderWidth: 1,
+                        titleColor: "#f9fafb",
+                        bodyColor: "#9ca3af"
+                    }
+                },
+                cutout: "68%"
             }
         });
     }
 
+    /* --- CHART 2: Defense Score Histogram --- */
     function renderScoreChart(dataObj) {
-        const ctx = document.getElementById("chart-scores").getContext("2d");
+        const canvas = document.getElementById("chart-scores");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
         const labels = Object.keys(dataObj);
         const values = Object.values(dataObj);
 
@@ -530,24 +650,41 @@ document.addEventListener("DOMContentLoaded", () => {
                 datasets: [{
                     label: "Evaluations",
                     data: values,
-                    backgroundColor: "#3b82f6",
-                    borderRadius: 4
+                    backgroundColor: [
+                        "#ef4444", "#f97316", "#eab308", "#3b82f6", "#10b981"
+                    ],
+                    borderRadius: 5,
+                    borderWidth: 0
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: "#111827",
+                        borderColor: "#374151",
+                        borderWidth: 1
+                    }
+                },
                 scales: {
-                    x: { ticks: { color: "#9ca3af" }, grid: { color: "#374151" } },
-                    y: { ticks: { color: "#9ca3af" }, grid: { color: "#374151" } }
+                    x: { ticks: { color: "#9ca3af", font: { size: 10 } }, grid: { color: "rgba(255, 255, 255, 0.05)" } },
+                    y: {
+                        ticks: { color: "#9ca3af", font: { size: 10 }, precision: 0 },
+                        grid: { color: "rgba(255, 255, 255, 0.05)" },
+                        beginAtZero: true
+                    }
                 }
             }
         });
     }
 
+    /* --- CHART 3: Length Bands --- */
     function renderLengthChart(dataObj) {
-        const ctx = document.getElementById("chart-lengths").getContext("2d");
+        const canvas = document.getElementById("chart-lengths");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
         const labels = Object.keys(dataObj);
         const values = Object.values(dataObj);
 
@@ -557,27 +694,43 @@ document.addEventListener("DOMContentLoaded", () => {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: "Analyses",
+                    label: "Credentials",
                     data: values,
-                    backgroundColor: "#8b5cf6",
-                    borderRadius: 4
+                    backgroundColor: [
+                        "#ef4444", "#f59e0b", "#3b82f6", "#10b981"
+                    ],
+                    borderRadius: 5
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: "#111827",
+                        borderColor: "#374151",
+                        borderWidth: 1
+                    }
+                },
                 scales: {
-                    x: { ticks: { color: "#9ca3af" }, grid: { color: "#374151" } },
-                    y: { ticks: { color: "#9ca3af" }, grid: { color: "#374151" } }
+                    x: { ticks: { color: "#9ca3af", font: { size: 10 } }, grid: { color: "rgba(255, 255, 255, 0.05)" } },
+                    y: {
+                        ticks: { color: "#9ca3af", font: { size: 10 }, precision: 0 },
+                        grid: { color: "rgba(255, 255, 255, 0.05)" },
+                        beginAtZero: true
+                    }
                 }
             }
         });
     }
 
+    /* --- CHART 4: Top Weaknesses --- */
     function renderWeaknessChart(weaknessList) {
-        const ctx = document.getElementById("chart-weaknesses").getContext("2d");
-        const labels = weaknessList.map(w => w.type.replace(/_/g, " "));
+        const canvas = document.getElementById("chart-weaknesses");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        const labels = weaknessList.map(w => w.type.replace(/_/g, " ").slice(0, 18));
         const values = weaknessList.map(w => w.count);
 
         if (chartWeaknesses) chartWeaknesses.destroy();
@@ -585,10 +738,10 @@ document.addEventListener("DOMContentLoaded", () => {
             type: "bar",
             indexAxis: "y",
             data: {
-                labels: labels,
+                labels: labels.length ? labels : ["No Weaknesses"],
                 datasets: [{
-                    label: "Frequency",
-                    data: values,
+                    label: "Occurrences",
+                    data: values.length ? values : [0],
                     backgroundColor: "#f59e0b",
                     borderRadius: 4
                 }]
@@ -596,15 +749,283 @@ document.addEventListener("DOMContentLoaded", () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: "#111827",
+                        borderColor: "#374151",
+                        borderWidth: 1
+                    }
+                },
                 scales: {
-                    x: { ticks: { color: "#9ca3af" }, grid: { color: "#374151" } },
-                    y: { ticks: { color: "#9ca3af" }, grid: { color: "#374151" } }
+                    x: {
+                        ticks: { color: "#9ca3af", font: { size: 10 }, precision: 0 },
+                        grid: { color: "rgba(255, 255, 255, 0.05)" },
+                        beginAtZero: true
+                    },
+                    y: { ticks: { color: "#9ca3af", font: { size: 9 } }, grid: { display: false } }
                 }
             }
         });
     }
 
+    /* --- CHART 5: Weakness Severity Breakdown --- */
+    function renderSeverityChart(dataObj) {
+        const canvas = document.getElementById("chart-severities");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        const labels = ["Critical", "High", "Medium", "Low"];
+        const values = [
+            dataObj["CRITICAL"] || 0,
+            dataObj["HIGH"] || 0,
+            dataObj["MEDIUM"] || 0,
+            dataObj["LOW"] || 0
+        ];
+
+        if (chartSeverities) chartSeverities.destroy();
+        chartSeverities = new Chart(ctx, {
+            type: "doughnut",
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: ["#ef4444", "#f97316", "#eab308", "#3b82f6"],
+                    borderColor: "#111827",
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: { color: "#9ca3af", font: { size: 10, weight: "bold" }, boxWidth: 12, padding: 8 }
+                    },
+                    tooltip: {
+                        backgroundColor: "#111827",
+                        borderColor: "#374151",
+                        borderWidth: 1
+                    }
+                },
+                cutout: "60%"
+            }
+        });
+    }
+
+    /* --- CHART 6: Character Pool Uniqueness --- */
+    function renderUniquenessChart(dataObj) {
+        const canvas = document.getElementById("chart-uniqueness");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        const labels = Object.keys(dataObj);
+        const values = Object.values(dataObj);
+
+        if (chartUniqueness) chartUniqueness.destroy();
+        chartUniqueness = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: labels.length ? labels : ["Empty"],
+                datasets: [{
+                    label: "Credentials",
+                    data: values.length ? values : [0],
+                    backgroundColor: [
+                        "#ef4444", "#f59e0b", "#3b82f6", "#10b981"
+                    ],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: "#111827",
+                        borderColor: "#374151",
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: "#9ca3af", font: { size: 9 } }, grid: { color: "rgba(255, 255, 255, 0.05)" } },
+                    y: {
+                        ticks: { color: "#9ca3af", font: { size: 10 }, precision: 0 },
+                        grid: { color: "rgba(255, 255, 255, 0.05)" },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    /* --- Dynamic Fleet Security Insights --- */
+    function renderSecurityInsights(insights) {
+        if (!telemetryInsightsContainer) return;
+        if (!insights || insights.length === 0) {
+            telemetryInsightsContainer.innerHTML = `<div class="insight-card-skeleton">Insufficient telemetry to synthesize fleet findings. Evaluate additional credentials above.</div>`;
+            return;
+        }
+
+        telemetryInsightsContainer.innerHTML = "";
+        insights.forEach(item => {
+            const card = document.createElement("div");
+            card.className = `insight-card insight-${item.type || "threat"}`;
+            card.innerHTML = `
+                <div class="insight-top">
+                    <span class="insight-icon">${escapeHTML(item.icon || "📌")}</span>
+                    <span class="insight-title">${escapeHTML(item.title)}</span>
+                </div>
+                <p class="insight-detail">${escapeHTML(item.detail)}</p>
+            `;
+            telemetryInsightsContainer.appendChild(card);
+        });
+    }
+
+    /* --- Telemetry Audit Log Table --- */
+    function renderTelemetryTable(events) {
+        if (!telemetryTableBody) return;
+
+        const filterTier = telemetryFilterTier ? telemetryFilterTier.value : "ALL";
+        const searchTerm = telemetrySearchInput ? telemetrySearchInput.value.trim().toLowerCase() : "";
+
+        const filtered = events.filter(e => {
+            if (filterTier !== "ALL" && e.classification !== filterTier) return false;
+            if (searchTerm) {
+                const combined = `${e.analysis_id} ${e.classification} ${e.primary_weakness} ${e.top_severity}`.toLowerCase();
+                if (!combined.includes(searchTerm)) return false;
+            }
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            telemetryTableBody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="table-empty">No telemetry sessions match the selected filter.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        telemetryTableBody.innerHTML = "";
+        filtered.forEach(e => {
+            const tr = document.createElement("tr");
+
+            // Tier badge class
+            let tierClass = "badge-neutral";
+            if (e.classification === "VERY WEAK") tierClass = "badge-danger";
+            else if (e.classification === "WEAK") tierClass = "badge-warning";
+            else if (e.classification === "MODERATE") tierClass = "badge-neutral";
+            else if (e.classification === "STRONG") tierClass = "badge-info";
+            else if (e.classification === "VERY STRONG") tierClass = "badge-success";
+
+            // Score styling
+            let scoreBg = "rgba(59, 130, 246, 0.15)";
+            let scoreColor = "#60a5fa";
+            if (e.score < 30) { scoreBg = "rgba(239, 68, 68, 0.2)"; scoreColor = "#f87171"; }
+            else if (e.score < 60) { scoreBg = "rgba(234, 179, 8, 0.2)"; scoreColor = "#facc15"; }
+            else if (e.score >= 80) { scoreBg = "rgba(16, 185, 129, 0.2)"; scoreColor = "#34d399"; }
+
+            // Max severity badge
+            const sev = (e.top_severity || "CLEAN").toLowerCase();
+            const sevBadgeClass = `tbl-badge tbl-badge-${sev}`;
+
+            // NIST flag
+            const nistClass = e.nist_status === "PASS" ? "tbl-pass" : "tbl-fail";
+            const nistText = e.nist_status === "PASS" ? "✓ PASS" : "✕ FAIL";
+
+            tr.innerHTML = `
+                <td><span class="table-session-id">#${escapeHTML(e.analysis_id)}</span></td>
+                <td><span class="table-timestamp">${escapeHTML(e.created_at)}</span></td>
+                <td>${e.password_length} chars</td>
+                <td>${e.unique_ratio_pct}%</td>
+                <td><span class="table-score-badge" style="background:${scoreBg}; color:${scoreColor}">${e.score}</span></td>
+                <td><span class="badge ${tierClass}" style="font-size:0.7rem;">${escapeHTML(e.classification)}</span></td>
+                <td>${escapeHTML(e.primary_weakness || "None (Clean)")}</td>
+                <td><span class="${sevBadgeClass}">${escapeHTML(e.top_severity)}</span></td>
+                <td><span class="${nistClass}">${nistText}</span></td>
+            `;
+            telemetryTableBody.appendChild(tr);
+        });
+    }
+
+    /* --- Interactive Toolbar & Simulation Event Listeners --- */
+    if (btnRefreshDashboard) {
+        btnRefreshDashboard.addEventListener("click", () => {
+            loadDashboardStats(true);
+        });
+    }
+
+    if (btnSimulateIngestion) {
+        btnSimulateIngestion.addEventListener("click", async () => {
+            btnSimulateIngestion.disabled = true;
+            const origText = btnSimulateIngestion.innerHTML;
+            btnSimulateIngestion.innerHTML = `<span class="btn-icon">⏳</span> Ingesting...`;
+
+            try {
+                const resp = await fetch("/api/dashboard/simulate", { method: "POST" });
+                const res = await resp.json();
+                if (res.status === "success") {
+                    renderDashboard(res.data);
+                }
+            } catch (err) {
+                // Silently handle
+            } finally {
+                btnSimulateIngestion.innerHTML = origText;
+                btnSimulateIngestion.disabled = false;
+            }
+        });
+    }
+
+    if (btnExportTelemetry) {
+        btnExportTelemetry.addEventListener("click", () => {
+            window.location.href = "/api/dashboard/export?format=csv";
+        });
+    }
+
+    if (btnResetTelemetry) {
+        btnResetTelemetry.addEventListener("click", async () => {
+            if (confirm("Reset telemetry database to baseline educational demo dataset?")) {
+                try {
+                    const resp = await fetch("/api/dashboard/reset", { method: "POST" });
+                    const res = await resp.json();
+                    if (res.status === "success") {
+                        renderDashboard(res.data);
+                    }
+                } catch (err) {
+                    // Silently handle
+                }
+            }
+        });
+    }
+
+    if (telemetrySearchInput) {
+        telemetrySearchInput.addEventListener("input", () => {
+            renderTelemetryTable(currentTelemetryEvents);
+        });
+    }
+
+    if (telemetryFilterTier) {
+        telemetryFilterTier.addEventListener("change", () => {
+            renderTelemetryTable(currentTelemetryEvents);
+        });
+    }
+
+    // Quick Simulation Injector Chips
+    simChips.forEach(chip => {
+        chip.addEventListener("click", () => {
+            const pwd = chip.getAttribute("data-pwd");
+            if (pwd && passwordInput) {
+                passwordInput.value = pwd;
+                passwordInput.type = "text";
+                if (eyeIcon) eyeIcon.textContent = "🔒";
+                if (charCounter) charCounter.textContent = `${pwd.length} characters`;
+                triggerDebouncedAnalysis();
+                document.getElementById("analyzer-section").scrollIntoView({ behavior: "smooth" });
+            }
+        });
+    });
+
     // Initial load of telemetry stats
     loadDashboardStats();
 });
+

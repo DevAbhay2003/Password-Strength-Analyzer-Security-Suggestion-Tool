@@ -178,11 +178,11 @@ CyberGuard enforces privacy at the architectural level:
 
 ## 11. Verification & Test Results
 
-The test suite contains **35 automated unit and security tests** executed via Python's standard `unittest` and `pytest` frameworks.
+The test suite contains **36 automated unit and security tests** executed via Python's standard `unittest` and `pytest` frameworks.
 
 ### Summary of Test Execution:
 ```
-============================= 35 passed in 1.88s ==============================
+============================= 36 passed in 1.85s ==============================
 ```
 
 ### Key Verification Cases:
@@ -193,6 +193,7 @@ The test suite contains **35 automated unit and security tests** executed via Py
 - **Random 20-Character CSPRNG:** Classified as `VERY STRONG` (Score: 100).
 - **Database Schema Audit:** Verified zero password columns in SQLite tables.
 - **API Leakage Audit:** Verified request input is never reflected in API responses.
+- **Telemetry & Export Zero-Persistence Audit:** Verified simulated ingestion and CSV export contain exclusively non-reversible metadata.
 
 ---
 

@@ -5,10 +5,18 @@ secure credential generation, and educational hashing demonstrations.
 Implements privacy boundaries: passwords exist transiently in memory only.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
+import io
+import csv
 from backend.services.password_analyzer import analyze_password
 from backend.services.password_generator import generate_secure_password, generate_secure_passphrase
-from backend.models.database import record_analysis_metadata, get_dashboard_stats
+from backend.models.database import (
+    record_analysis_metadata,
+    get_dashboard_stats,
+    reset_demo_analytics,
+    simulate_enterprise_ingestion,
+    export_telemetry_dataset
+)
 from backend.utils.hashing_demo import demo_fast_vs_slow_hashing
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -81,6 +89,80 @@ def dashboard_stats_endpoint():
         return jsonify({
             "status": "error",
             "message": "Unable to compile aggregate dashboard statistics."
+        }), 500
+
+@api_bp.route("/dashboard/reset", methods=["POST"])
+def dashboard_reset_endpoint():
+    """
+    POST /api/dashboard/reset
+    Resets the telemetry database to the baseline educational state.
+    """
+    try:
+        reset_demo_analytics()
+        stats = get_dashboard_stats()
+        return jsonify({
+            "status": "success",
+            "message": "Telemetry database reseeded to clean baseline.",
+            "data": stats
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": "Failed to reset telemetry database."
+        }), 500
+
+@api_bp.route("/dashboard/simulate", methods=["POST"])
+def dashboard_simulate_endpoint():
+    """
+    POST /api/dashboard/simulate
+    Simulates ingestion of 5 anonymized corporate sessions to demonstrate real-time telemetry updates.
+    """
+    try:
+        count = simulate_enterprise_ingestion()
+        stats = get_dashboard_stats()
+        return jsonify({
+            "status": "success",
+            "message": f"Successfully simulated {count} telemetry sessions.",
+            "data": stats
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": "Failed to simulate telemetry ingestion."
+        }), 500
+
+@api_bp.route("/dashboard/export", methods=["GET"])
+def dashboard_export_endpoint():
+    """
+    GET /api/dashboard/export
+    Returns safe anonymized telemetry audit records in JSON or CSV.
+    """
+    try:
+        records = export_telemetry_dataset()
+        export_format = request.args.get("format", "json").lower()
+
+        if export_format == "csv":
+            output = io.StringIO()
+            fieldnames = ["analysis_id", "score", "classification", "password_length", "unique_character_ratio", "weakness_count", "timestamp"]
+            writer = csv.DictWriter(output, fieldnames=fieldnames)
+            writer.writeheader()
+            for r in records:
+                writer.writerow(r)
+            return Response(
+                output.getvalue(),
+                mimetype="text/csv",
+                headers={"Content-Disposition": "attachment;filename=cyberguard_telemetry_report.csv"}
+            )
+
+        return jsonify({
+            "status": "success",
+            "count": len(records),
+            "data": records
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": "Failed to export telemetry audit report."
         }), 500
 
 @api_bp.route("/generate-password", methods=["POST"])

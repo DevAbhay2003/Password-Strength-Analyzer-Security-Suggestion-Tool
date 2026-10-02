@@ -316,52 +316,263 @@
         </section>
 
         <!-- SECTION 5: PRIVACY-SAFE ANALYTICS DASHBOARD -->
-        <section id="dashboard-section" class="card">
-            <div class="card-header">
-                <h2>Defensive Telemetry & Analytics Dashboard</h2>
-                <span class="badge badge-success">Zero Password Persistence</span>
+        <section id="dashboard-section" class="card dashboard-card">
+            <div class="card-header dashboard-header">
+                <div>
+                    <h2>Defensive Telemetry & Posture Analytics Dashboard</h2>
+                    <p class="card-desc" style="margin-top: 0.35rem; margin-bottom: 0;">
+                        Aggregated organizational telemetry synthesized exclusively from non-reversible numeric metadata.
+                        Passwords and cryptographic hashes are never saved or stored.
+                    </p>
+                </div>
+                <div class="header-badges">
+                    <span class="badge badge-success">Zero Credential Persistence</span>
+                    <span class="badge badge-pulse"><span class="pulse-dot"></span> Live Telemetry Active</span>
+                    <span class="badge badge-info">SOC Metric Engine</span>
+                </div>
             </div>
-            <p class="card-desc">
-                High-level aggregate statistics compiled strictly from non-reversible numeric metadata
-                (scores, classifications, lengths). No passwords or hashes exist in the analytics database.
-            </p>
 
-            <div class="stat-cards-grid">
+            <!-- Toolbar & Controls Bar -->
+            <div class="dashboard-toolbar">
+                <div class="toolbar-left">
+                    <span class="sync-indicator">
+                        <span class="sync-dot"></span> Last Synced: <strong id="dashboard-last-sync">Just now</strong>
+                    </span>
+                    <span class="dataset-tag" id="dashboard-session-counter">Telemetry Feed Online</span>
+                </div>
+                <div class="toolbar-actions">
+                    <button type="button" id="btn-refresh-dashboard" class="btn btn-sm btn-secondary" title="Fetch latest telemetry stats">
+                        <span class="btn-icon">🔄</span> Refresh
+                    </button>
+                    <button type="button" id="btn-simulate-ingestion" class="btn btn-sm btn-accent" title="Simulate 5 corporate credential evaluations">
+                        <span class="btn-icon">⚡</span> Simulate Fleet Ingestion (+5)
+                    </button>
+                    <button type="button" id="btn-export-telemetry" class="btn btn-sm btn-primary" title="Export anonymized metadata report (CSV)">
+                        <span class="btn-icon">📥</span> Export CSV Audit
+                    </button>
+                    <button type="button" id="btn-reset-telemetry" class="btn btn-sm btn-danger-outline" title="Reset telemetry database to baseline">
+                        <span class="btn-icon">🧹</span> Reset Telemetry
+                    </button>
+                </div>
+            </div>
+
+            <!-- Fleet Security Posture Banner -->
+            <div class="posture-banner">
+                <div class="posture-info">
+                    <div class="posture-title-row">
+                        <span class="posture-label">FLEET DEFENSE POSTURE RATING:</span>
+                        <span id="stat-posture-badge" class="badge badge-neutral">CALCULATING...</span>
+                        <span class="posture-score-num">Index: <strong id="stat-posture-score">0</strong>/100</span>
+                    </div>
+                    <div class="posture-bar-wrapper">
+                        <div id="stat-posture-bar" class="posture-bar" style="width: 0%;"></div>
+                    </div>
+                    <p class="posture-note">
+                        *Weighted enterprise risk index factoring fleet defense scores (50%), NIST SP 800-63B length compliance (30%), and at-risk weakness containment (20%).
+                    </p>
+                </div>
+                <!-- Interactive Quick-Test Simulation Chips -->
+                <div class="quick-sim-container">
+                    <span class="sim-label">⚡ Live Test Injectors:</span>
+                    <div class="sim-chips-list">
+                        <button type="button" class="sim-chip" data-pwd="Spring2026!" title="Test typical corporate predictable grammar">
+                            Predictable Grammar (Spring2026!)
+                        </button>
+                        <button type="button" class="sim-chip" data-pwd="12345678" title="Test common numeric sequence">
+                            Numeric Run (12345678)
+                        </button>
+                        <button type="button" class="sim-chip" data-pwd="qwertyUIOP@#" title="Test keyboard walk">
+                            Keyboard Walk (qwerty...)
+                        </button>
+                        <button type="button" class="sim-chip" data-pwd="cobalt-velvet-horizon-zenith" title="Test high-entropy passphrase">
+                            Passphrase (4 words)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Executive KPI Stat Cards (6 Cards) -->
+            <div class="stat-cards-grid stat-cards-6">
+                <!-- Card 1: Total Analyses -->
                 <div class="stat-card">
-                    <span class="stat-title">Total Analyses Evaluated</span>
+                    <div class="stat-icon-wrap">📊</div>
+                    <span class="stat-title">Total Evaluated Credentials</span>
                     <span id="stat-total" class="stat-number">0</span>
+                    <span class="stat-sub">In-memory sessions captured</span>
                 </div>
+
+                <!-- Card 2: Mean Defense Score -->
                 <div class="stat-card">
-                    <span class="stat-title">Average Defense Score</span>
+                    <div class="stat-icon-wrap">🎯</div>
+                    <span class="stat-title">Mean Fleet Score</span>
                     <span id="stat-avg-score" class="stat-number">0 / 100</span>
+                    <span id="stat-score-tier" class="stat-sub">Target: &gt; 75 (Enterprise)</span>
                 </div>
+
+                <!-- Card 3: Mean Length -->
                 <div class="stat-card">
-                    <span class="stat-title">Average Character Length</span>
+                    <div class="stat-icon-wrap">📏</div>
+                    <span class="stat-title">Mean Credential Length</span>
                     <span id="stat-avg-len" class="stat-number">0 chars</span>
+                    <span class="stat-sub">NIST SP 800-63B Target: ≥ 12</span>
                 </div>
+
+                <!-- Card 4: Dominant Classification -->
                 <div class="stat-card">
-                    <span class="stat-title">Dominant Classification</span>
+                    <div class="stat-icon-wrap">🛡️</div>
+                    <span class="stat-title">Dominant Strength Tier</span>
                     <span id="stat-dominant" class="stat-number">-</span>
+                    <span class="stat-sub">Most frequent classification</span>
+                </div>
+
+                <!-- Card 5: At-Risk Population -->
+                <div class="stat-card stat-card-risk">
+                    <div class="stat-icon-wrap">⚠️</div>
+                    <span class="stat-title">At-Risk Weakness Rate</span>
+                    <span id="stat-at-risk" class="stat-number">0%</span>
+                    <span id="stat-at-risk-count" class="stat-sub">0 in VERY WEAK / WEAK</span>
+                </div>
+
+                <!-- Card 6: NIST SP 800-63B Compliance -->
+                <div class="stat-card stat-card-nist">
+                    <div class="stat-icon-wrap">📋</div>
+                    <span class="stat-title">NIST SP 800-63B Pass Rate</span>
+                    <span id="stat-nist-rate" class="stat-number">0%</span>
+                    <span id="stat-nist-count" class="stat-sub">0 zero-weakness compliant</span>
                 </div>
             </div>
 
-            <!-- Charts Container -->
-            <div class="charts-grid">
-                <div class="chart-wrapper">
-                    <h4>Strength Tier Distribution</h4>
-                    <canvas id="chart-classifications"></canvas>
+            <!-- Dynamic Fleet Security Insights Panel -->
+            <div class="insights-panel">
+                <div class="insights-header">
+                    <span class="insights-title">🔍 Automated Fleet Security Insights & Heuristic Telemetry</span>
+                    <span class="insights-subtitle">Dynamic findings calculated from observed credential evaluations</span>
                 </div>
-                <div class="chart-wrapper">
-                    <h4>Score Distribution Histogram</h4>
-                    <canvas id="chart-scores"></canvas>
+                <div id="telemetry-insights-container" class="insights-grid">
+                    <div class="insight-card-skeleton">Compiling fleet intelligence observations...</div>
                 </div>
+            </div>
+
+            <!-- Visualizations Grid (6 Advanced Charts) -->
+            <div class="charts-section-header">
+                <h3>Defensive Telemetry Visualizations & Pattern Distributions</h3>
+                <span class="micro-note">Interactive Chart.js visualizations updated reactively</span>
+            </div>
+            <div class="charts-grid charts-grid-6">
+                <!-- Chart 1: Tier Breakdown -->
                 <div class="chart-wrapper">
-                    <h4>Password Length Distribution</h4>
-                    <canvas id="chart-lengths"></canvas>
+                    <div class="chart-title-row">
+                        <h4>Strength Tier Distribution</h4>
+                        <span class="chart-badge">5-Tier Model</span>
+                    </div>
+                    <div class="chart-canvas-container">
+                        <canvas id="chart-classifications"></canvas>
+                    </div>
                 </div>
+
+                <!-- Chart 2: Score Distribution -->
                 <div class="chart-wrapper">
-                    <h4>Top Detected Vulnerability Types</h4>
-                    <canvas id="chart-weaknesses"></canvas>
+                    <div class="chart-title-row">
+                        <h4>Defense Score Distribution</h4>
+                        <span class="chart-badge">0-100 Histogram</span>
+                    </div>
+                    <div class="chart-canvas-container">
+                        <canvas id="chart-scores"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 3: Length Bands -->
+                <div class="chart-wrapper">
+                    <div class="chart-title-row">
+                        <h4>Credential Length Bands</h4>
+                        <span class="chart-badge">NIST Calibrated</span>
+                    </div>
+                    <div class="chart-canvas-container">
+                        <canvas id="chart-lengths"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 4: Top Weaknesses -->
+                <div class="chart-wrapper">
+                    <div class="chart-title-row">
+                        <h4>Top Adversary Pattern Vectors</h4>
+                        <span class="chart-badge">Frequency Ranking</span>
+                    </div>
+                    <div class="chart-canvas-container">
+                        <canvas id="chart-weaknesses"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 5: Vulnerability Severity -->
+                <div class="chart-wrapper">
+                    <div class="chart-title-row">
+                        <h4>Weakness Severity Breakdown</h4>
+                        <span class="chart-badge">CVSS-Style Tiers</span>
+                    </div>
+                    <div class="chart-canvas-container">
+                        <canvas id="chart-severities"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 6: Character Pool Uniqueness -->
+                <div class="chart-wrapper">
+                    <div class="chart-title-row">
+                        <h4>Character Uniqueness & Diversity</h4>
+                        <span class="chart-badge">Repetition Ratio</span>
+                    </div>
+                    <div class="chart-canvas-container">
+                        <canvas id="chart-uniqueness"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live SOC Telemetry Audit Log Table -->
+            <div class="audit-log-section">
+                <div class="audit-log-header">
+                    <div>
+                        <h3>Recent Telemetry Activity Stream (Live SOC Audit Log)</h3>
+                        <p class="micro-note">Streaming feed of the latest anonymized evaluation sessions.</p>
+                    </div>
+                    <div class="audit-filters">
+                        <input type="text" id="telemetry-search-input" placeholder="Search session or weakness..." class="table-search-input">
+                        <select id="telemetry-filter-tier" class="table-filter-select">
+                            <option value="ALL">All Tiers</option>
+                            <option value="VERY WEAK">Very Weak</option>
+                            <option value="WEAK">Weak</option>
+                            <option value="MODERATE">Moderate</option>
+                            <option value="STRONG">Strong</option>
+                            <option value="VERY STRONG">Very Strong</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="telemetry-table">
+                        <thead>
+                            <tr>
+                                <th>Session ID</th>
+                                <th>Timestamp</th>
+                                <th>Length</th>
+                                <th>Uniqueness</th>
+                                <th>Defense Score</th>
+                                <th>Classification Tier</th>
+                                <th>Primary Vulnerability Flag</th>
+                                <th>Max Severity</th>
+                                <th>NIST SP 800-63B</th>
+                            </tr>
+                        </thead>
+                        <tbody id="telemetry-table-body">
+                            <tr>
+                                <td colspan="9" class="table-loading">Loading telemetry audit events...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table-footer-note">
+                    🔒 <strong>Strict Zero-Knowledge Guarantee:</strong>
+                    This audit stream reflects strictly non-reversible structural telemetry captured transiently in memory.
+                    Passwords, plaintext words, salts, and cryptographic hashes are fundamentally excluded from persistence.
                 </div>
             </div>
         </section>

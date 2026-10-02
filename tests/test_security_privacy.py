@@ -81,5 +81,41 @@ class TestSecurityAndPrivacy(unittest.TestCase):
         self.assertEqual(response.headers.get("X-Frame-Options"), "DENY")
         self.assertIn("no-store", response.headers.get("Cache-Control"))
 
+    def test_sec_06_dashboard_telemetry_privacy_and_export(self):
+        """Verifies dashboard telemetry endpoints return zero plaintext credentials."""
+        # 1. Stats endpoint check
+        resp = self.client.get("/api/dashboard/stats")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.get_json()["data"]
+        self.assertIn("risk_posture", data)
+        self.assertIn("recent_telemetry", data)
+        self.assertIn("security_insights", data)
+
+        # 2. Export check (JSON)
+        exp_resp = self.client.get("/api/dashboard/export")
+        self.assertEqual(exp_resp.status_code, 200)
+        exp_json = exp_resp.get_json()
+        self.assertEqual(exp_json["status"], "success")
+        for rec in exp_json["data"]:
+            self.assertNotIn("plaintext", rec)
+            self.assertNotIn("hash", rec)
+            self.assertNotIn("salt", rec)
+
+        # 3. Export check (CSV)
+        exp_csv = self.client.get("/api/dashboard/export?format=csv")
+        self.assertEqual(exp_csv.status_code, 200)
+        self.assertIn("text/csv", exp_csv.content_type)
+        first_line = exp_csv.data.decode().splitlines()[0]
+        self.assertNotIn("plaintext", first_line)
+        self.assertNotIn("hash", first_line)
+        self.assertNotIn("salt", first_line)
+
+        # 4. Simulation ingestion check
+        sim_resp = self.client.post("/api/dashboard/simulate")
+        self.assertEqual(sim_resp.status_code, 200)
+        self.assertEqual(sim_resp.get_json()["status"], "success")
+
 if __name__ == "__main__":
     unittest.main()
+
+
