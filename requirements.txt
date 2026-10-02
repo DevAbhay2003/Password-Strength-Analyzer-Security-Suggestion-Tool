@@ -1,0 +1,9 @@
+# CyberGuard | Password Strength Analyzer & Security Suggestion Tool
+# Core Dependencies
+flask>=3.0.0
+flask-cors>=4.0.0
+pytest>=8.0.0
+
+# Optional cryptographic utilities
+argon2-cffi>=23.1.0
+bcrypt>=4.1.0

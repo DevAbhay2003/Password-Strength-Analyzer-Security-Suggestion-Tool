@@ -1,0 +1,36 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Virtual Environments
+venv/
+env/
+ENV/
+.venv/
+
+# Environment files
+.env
+.env.local
+
+# Databases & local user analytics
+*.db
+*.sqlite3
+!data/common_passwords.txt
+
+# IDE / Editor configuration
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Operating System temporary files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs (ensuring no logs are tracked)
+*.log
+logs/
